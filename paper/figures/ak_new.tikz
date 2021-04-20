@@ -1,0 +1,20 @@
+\tikzset{every state/.style={minimum size=15pt}}
+\tikzset{mstatestyle/.style={draw,rectangle,rounded corners,fill=blue!0,inner sep=1.5mm}}
+\begin{tikzpicture}[shorten >=1pt,on grid]
+  \node (init) {};
+  \node[mstatestyle,right of=init,node distance=30mm]   (q_0)
+    {$q: \regex{\DOT*a\DOT\{100\}}$};
+
+  \node[mstatestyle,node distance=3cm,accepting,label={below:$\{c \geq 100\}$}] (q_1) [right=of q_0]
+    {$s: \regex{\DOT\{100\}}$};
+
+  \path[->] (init) edge node[above]         {$c:=0$} (q_0);
+  \path[->] (q_0) edge [loop above]   node         {$\regex{\DOT}$} ();
+  \path[->] (q_0) edge  node [above,align=center]
+              {$\regex{a}$} (q_1);
+
+  \path[->] (q_1) edge [loop above]   node[align=center]
+              {$\figtrans{\regex{\DOT} \land c < 100}{c:=c+1}$} ();
+
+\end{tikzpicture}
+

@@ -1,0 +1,29 @@
+{
+\setlength{\tabcolsep}{4pt}
+%\newcommand{\closer}{\hspace{2.5mm}}
+%\begin{tabular}{llr@{\closer}r@{\closer}r@{\closer}r@{\closer}r@{\closer}r@{\closer}r@{\closer}r}
+\begin{tabular}{llrrrrrrrr}
+\toprule
+\multicolumn{1}{c}{Source\hspace*{-3mm}} & \multicolumn{1}{c}{Regex}                                                                             & \multicolumn{1}{c}{\retwo} & \multicolumn{1}{c}{\grep} & \multicolumn{1}{c}{\dotnet} & \multicolumn{1}{c}{\srm} & \multicolumn{4}{c}{\catool} \tabularnewline
+                                         &                                                                                                       &                            &                           &                             &                          & total                                       & CA              & CsA     & match \tabularnewline
+\midrule
+\mrtwo{Snort}                            & \verb#.*[aA][uU][tT][hH]#\ldots\verb#[iI][cC] #\recont                                                                & \mrtwo{$11.27$}                    & \mrtwo{$7.8 $}                    & \mrtwo{$361.1$}                     & \mrtwo{$555.56$}                 & \mrtwo{$1.04$}                                      & \mrtwo{$0.03$}          & \mrtwo{$0.05$}  & \mrtwo{$0.31$} \tabularnewline
+                                         & \recont\verb#[^\x0A]{512}#\\
+Snort                                    & \verb@\x20[^\x21\x22]{500}@                                                                           & $439.98$                   & $  0.11$                  & $  2.20$                    & \timeout                 & $1.08$                                      & $0.03$          & $0.04$  & $0.83$ \tabularnewline
+\mrtwo{Snort}                            & \verb#^RCPT TO\x20\s*[\w\s@\.]{200,}#\recont                                                          & \mrtwo{$340.7$}                    & \mrtwo{---}                       & \mrtwo{\timeout\!\!}                    & \mrtwo{\timeout\!\!}                 & \mrtwo{$1.68$}                                      & \mrtwo{$0.03$}          & \mrtwo{$0.07$}  & \mrtwo{$0.89$} \tabularnewline
+                                         & \recont\verb#\x20[\w\s@\.]{200,}#\ldots \\
+Snort                                    & \verb#php.*\x20[^\n]{256}#                                                                            & $176.75$                   & $  0.10$                  & $  1.22$                    & \timeout                 & $1.08$                                      & $0.04$          & $0.07$  & $0.74$ \tabularnewline
+\mrtwo{Snort}                            & \verb#^(NT|CallBack|SID|TimeOut)\s*#\recont                                                           & $164.11$                   & $  0.12$                  & $ 14.59$                    & $229.41$                 & $1.07$                                      & $0.03$          & $0.07$  & $0.72$ \tabularnewline
+                                         & \recont\verb#\x20\s*[^\n]{512}#\\
+Snort                                    & \verb#.*[nN][eE][wW]#\ldots\verb# [^\x20]{100}#                                                       & $0.13 $                    & $1.26$                    & $39.92$                     & $0.74  $                 & $0.81$                                      & $0.03$          & $0.04$  & $0.65$ \tabularnewline
+\mrtwo{Bro}                              & \verb#^[nN][aA][mM][eE]=s*[^\r\n\x3b#\recont                                                          & \mrtwo{$128.57$}                   & \mrtwo{$ 12.24$}                  & \mrtwo{$  0.51$}                    & \mrtwo{$ 76.48$}                 & \mrtwo{$1.15$}                                      & \mrtwo{$0.03$}          & \mrtwo{$0.04$}  & \mrtwo{$0.94$} \tabularnewline
+                                         & \recont\verb#\x20\x09\x0b\x2c]{300}# \\
+\LF                        & \verb#_.{39}#                                                                                         & $22.96$                    & $225.34$                  & $1.94$                      & $357.68$                 & $1.12$                                      & $0.03$          & $0.04$  & $0.79$ \tabularnewline
+\LF                        & \verb#(.{1,980}[,])\s+(\S)#                                                                           & $260.59$                   & \timeout                  & $308.66$                    & $  0.63$                 & $1.07$                                      & $0.03$          & $0.05$  & $0.59$ \tabularnewline
+\LF                        & \verb#(_a ){64999}_a#                                                                                 & ---                        & ---                       & \timeout                    & \timeout                 & $0.96$                                      & $0.03$          & $0.04$  & $0.51$ \tabularnewline
+\LF                        & \verb#\[{50000}a\]{50000}#                                                                            & ---                        & ---                       & $4.36 $                     & \timeout                 & $5.13$                                      & $0.02$          & $0.02$  & $0.41$ \tabularnewline
+\mrtwo{\LF }               & \verb#^QS([NDR])(.{4})(.{6})(\d{8})#\ldots\recont\hspace*{-3mm}                                       & \mrtwo{$0.12$}                     & \mrtwo{$0.10$}                    & \mrtwo{$1.03$}                      & \mrtwo{$0.85$}                   & \mrtwo{$96.20$}                                     & \mrtwo{$0.04$}          & \mrtwo{$81.64$} & \mrtwo{$0.65$} \tabularnewline
+                                         & \recont\verb#(.{4})(.{6})(.{8})(.{8})(.)$# \\
+\bottomrule
+\end{tabular}
+}

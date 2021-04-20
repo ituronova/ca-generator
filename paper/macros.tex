@@ -1,0 +1,631 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% a transition as an arrow interrupted by a symbol in a bracket
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\makeatletter
+\DeclareRobustCommand{\shortto}{%
+  \mathrel{\mathpalette\short@to\relax}%
+}
+
+\DeclareRobustCommand{\shortminus}{%
+  \mathrel{\mathpalette\short@minus\relax}%
+}
+
+\newcommand{\short@to}[2]{%
+  \mkern2mu
+  \clipbox{{.5\width} 0 0 0}{$\m@th#1\vphantom{+}{\rightarrow}$}%
+}
+
+\newcommand{\short@minus}[2]{%
+  \mkern2mu
+  \clipbox{{.5\width} 0 0 0}{$\m@th#1\vphantom{+}{-}$}%
+}
+\makeatother
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%variants of the transition arrow
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%scriptstyle
+%-------------------------------
+%-[bla]->
+%\newcommand{\labeledto}[1]{{{\shortminus}\hspace{-1.6pt}\raisebox{0.16ex}{$\scriptstyle[ #1\hspace{-0.28pt}]$}\hspace{-2.2pt}{\shortto}}}
+%-<bla>->
+%\newcommand{\labeledto}[1]{{{\shortminus}\hspace{-2pt}\raisebox{0.16ex}{$\scriptstyle\langle #1\hspace{-0.28pt}\rangle$}\hspace{-2.2pt}{\shortto}}}
+%-{bla}->
+%\newcommand{\labeledto}[1]{{{\shortminus}\hspace{-2pt}\raisebox{0.16ex}{$\scriptstyle\{ #1\hspace{-0.28pt}\}$}\hspace{-2.2pt}{\shortto}}}
+%-(bla)->
+%\newcommand{\labeledto}[1]{{{\shortminus}\hspace{-1.0pt}\raisebox{0.16ex}{$\scriptstyle( #1\hspace{-0.28pt})$}\hspace{-1.6pt}{\shortto}}}
+%-------------------------------
+%small
+%-------------------------------
+%-[bla]->
+%\newcommand{\labeledto}[1]{{{\shortminus}\hspace{-1.6pt}\raisebox{0.16ex}{$\scriptstyle[ #1\hspace{-0.28pt}]$}\hspace{-2.2pt}{\shortto}}}
+%-<bla>->
+%\newcommand{\labeledto}[1]{{{\shortminus}\hspace{-2pt}\raisebox{0.16ex}{$\scriptstyle\langle #1\hspace{-0.28pt}\rangle$}\hspace{-2.2pt}{\shortto}}}
+%-{bla}->
+%\newcommand{\labeledto}[1]{{{\shortminus}\hspace{-2pt}\raisebox{0.16ex}{$\scriptstyle\{ #1\hspace{-0.28pt}\}$}\hspace{-2.2pt}{\shortto}}}
+%-(bla)->
+\newcommand{\labeledto}[1]{\raisebox{-0.2pt}{\scalebox{1.2}{\ensuremath{{\shortminus}\hspace{-1.0pt}\raisebox{0.16ex}{$\scriptstyle(#1\hspace{-0.28pt})$}\hspace{-1.75pt}{\shortto}}}}}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%automata arrow in superscript and subscritp script, so far only the -{bla}->
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\scriptlabeledto}[1]{{{\shortminus}\hspace{-1.0pt}\raisebox{0.12ex}{$\scriptscriptstyle\{ #1\hspace{-0.28pt}\}$}\hspace{-1.6pt}{\shortto}}}
+
+\def\moveStrange(#1,#2,#3){%somewhat shorter syntax 
+\mathchoice
+{#1\,\labeledto{#2}\,#3}
+{#1\labeledto{#2}#3}
+{#1\scriptlabeledto{#2}#3}
+{#1\scriptlabeledto{#2}#3}
+}
+\newcommand\move[3]{%standard LaTex syntax where each parameter is put in {}
+\mathchoice
+{#1\,\labeledto{#2}\,#3}
+{#1\labeledto{#2}#3}
+{#1\scriptlabeledto{#2}#3}
+{#1\scriptlabeledto{#2}#3}
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%commenting
+\newcommand{\td}[1]{\textcolor{blue}{\ifmmode \text{[#1]}\else [#1] \fi}}
+\newcommand{\ol}[1]{\textcolor{blue}{\ifmmode \text{[OL: #1]}\else [OL: #1] \fi}}
+\newcommand{\tv}[1]{\textcolor{magenta}{\ifmmode \text{[TV: #1]}\else [TV: #1] \fi}}
+\newcommand{\lh}[1]{\textcolor{orange}{\ifmmode \text{[LH: #1]}\else [LH: #1] \fi}}
+\newcommand{\lt}[1]{\textcolor{green}{\ifmmode \text{[LT: #1]}\else [LT: #1] \fi}}
+%\newcommand{\lh}[1]{\todo[color=green!20]{LH: #1}}
+\newcommand{\mv}[1]{\textcolor{purple}{\ifmmode \text{[MV: #1]}\else [MV: #1] \fi}}
+\newcommand{\os}[1]{\textcolor{cyan}{\ifmmode \text{[OS: #1]}\else [OS: #1] \fi}}
+%\newcommand{\remove}[1]{\textcolor{red}{\ifmmode \text{#1}\else #1 \fi}}
+%\newcommand{\remove}[1]{\textcolor{red}{\ifmmode \text{RM}\else RM \fi}}
+\newcommand{\focus}[1]{\textcolor{red}{\ifmmode \text{#1}\else #1 \fi}}
+
+%\renewcommand{\td}[1]{}
+%\renewcommand{\ol}[1]{}
+%\renewcommand{\tv}[1]{}
+%\renewcommand{\lh}[1]{}
+%\renewcommand{\mv}[1]{}
+%\renewcommand{\lt}[1]{}
+
+\newcommand{\regex}[1]{\ensuremath{\texttt{#1}}}
+
+% Blinding
+\newcommand{\blinded}[1]{\ifx\blindreview\undefined #1 \else \textcolor{black!65}{[blinded for review]}\fi}
+
+%general
+\newcommand{\nat}{\mathbb{N}}
+
+\newcommand{\secref}[1]{\S{\ref{#1}}}
+
+%Transition systems
+\newcommand{\system}{T} %trnasition system
+\newcommand{\var}{v} %configuration variable
+\newcommand{\vars}{V} %all configuration variables
+% \newcommand{\svar}{x} %symbol variable
+% \newcommand{\svar}{\alpha} %symbol variable
+% \newcommand{\svar}{\chi} %symbol variable
+%\newcommand{\svar}{\mathit{in}} %symbol variable
+% \newcommand{\svar}{\boldsymbol{\ell}} %symbol variable
+% \newcommand{\svar}{\ell} %symbol variable
+% \newcommand{\svar}{\mathbbmss{l}} %symbol variable
+% \newcommand{\svar}{\mathbbmtt{l}} %symbol variable
+% \newcommand{\svar}{\mathbbm{l}} %symbol variable
+\newcommand{\svar}{\texttt{l}} %symbol variable
+\newcommand{\domain}{\mathbb{D}} %variable domain
+\newcommand{\symbols}{\Sigma} %lphabet
+\newcommand{\symb}{a} %alphabet symbol
+\newcommand{\conf}{\alpha} %configuration of on LTS 
+\newcommand{\confs}{\mathbb{C}} %all configurations
+% \newcommand{\assignments}{f} %assignments on a transition
+\newcommand{\assignments}{\mathit{f}} %assignments on a transition
+\newcommand{\psphere}{\psi} %parametric sphere
+\newcommand{\normpsphere}{\psphere_n} %normalized sphere
+\newcommand{\semof}[1]{\llbracket#1\rrbracket} %semantics of something
+\newcommand{\val}{\nu} %general valuation of variables
+% \newcommand{\preds}[0]{\mathbb{P}}   % symbol predicates
+\newcommand{\preds}[0]{\mathcal{P}}   % symbol predicates
+\newcommand{\theory}[0]{\mathbb{T}}  % theory of counters
+
+%counting automata 
+\newcommand{\automaton}{A} %counting automaton
+
+\newcommand{\autConf}{A_{conf}} 
+\newcommand{\aut}[0]{\automaton}
+\newcommand{\autof}[1]{\aut_{#1}}
+\newcommand{\states}{Q} 
+\renewcommand{\state}{q}
+\newcommand{\stateone}{q}
+
+\newcommand{\statetwo}{r}
+\newcommand{\run}{\phi}
+\newcommand{\labels}{labels}
+%\newcommand{\stvar}{s} %state variable
+%\newcommand{\stvar}{\boldsymbol{s}} %state variable
+%\newcommand{\stvar}{\mathbbmtt{s}} %state variable
+%\newcommand{\stvar}{\mathbbmss{s}} %state variable
+%\newcommand{\stvar}{\mathbbm{s}} %state variable
+\newcommand{\stvar}{\texttt{s}} %state variable
+% \newcommand{\stvar}{\mathfrak{s}} %state variable
+\newcommand{\stvars}{S} %all state variables
+\newcommand{\trel}{\Delta} %transition formula
+\newcommand{\cvar}{c} %counters 
+\newcommand{\cvars}{C} %all counters
+\newcommand{\sguard}{\alpha} %symbol guard on a transition
+\newcommand{\cguard}{\beta} %counter guard on a trantision
+%\newcommand{\guard}{\gamma}
+\newcommand{\guardnew}{h} %guard on atransition (mixed symbols and counuters) [new one]
+%\newcommand{\update}{\mathit{update}} %combinatino of assignments in the factorised form
+\newcommand{\tf}{\phi} %transition formula
+% States in transitions as blue bubbles
+%\tikzset{mstatestyle/.style={draw,rectangle,rounded corners,fill=blue!30,inner xsep=.3em,inner ysep=0em,text height=2ex,text depth=.9ex}}
+% States in transitions as white bubbles
+\tikzset{mstatestyle/.style={draw,rectangle,rounded corners,fill=blue!0,inner xsep=.3em,inner ysep=0em,text height=2ex,text depth=.9ex}}
+\newcommand{\mstate}[1]{\tikz[baseline,anchor=base]{\node[mstatestyle] {\ensuremath{#1}};}} %macrostate
+\newcommand{\limpl}[0]{\mathop{\rightarrow}}
+
+%formulae, substitutions, mappings
+\newcommand{\subst}{\theta} %substitution
+\newcommand{\substs}{\Theta} %set of substitutions
+\newcommand{\substc}{\subst_{\mathit{const}}} %subst of integer constants by pars
+\newcommand{\substa}{\subst_{\mathit{at}}} %... of assignment terms ...
+\newcommand{\substp}{\subst_{\mathit{par}}} %... of parameters ...
+\newcommand{\unprime}{\subst_{\mathit{unprime}}} %subst that removes prime
+\newcommand{\rename}{\subst_{\mathit{rename}}} %subst that renames parameters
+%\newcommand{\renamePrimed}{\subst_{\mathit{rename}}^{\mathit{primed}}} %subst that renames primed parameters
+\newcommand{\renamePrimed}{\subst'_{\mathit{rename}}} %subst that renames primed parameters
+\newcommand{\renames}{\substs_{\mathit{rename}}} %set of renamings
+\newcommand{\domof}[1]{\mathbf{dom}(#1)} %domain of a mapping
+\newcommand{\imgof}[1]{\mathbf{img}(#1)} %image of a mapping
+\newcommand{\Pars}{\mathbb{P}} %pool of parameters (unbounded perhaps)
+\newcommand{\Parsof}[1]{\Pars_{|#1}} %pool of parameters (unbounded perhaps) of
+\newcommand{\restr}[2]{#1|_{#2}} %restric the domain of a map
+\newcommand{\subs}[1]{[#1]} %substitution
+%\newcommand{\elim}[0]{\mathit{elim}} % quantifier elimination
+\newcommand{\elim}[0]{\mathit{elim}} % quantifier elimination
+%\newcommand{\elimof}[2]{\elim(\exists #1:#2)} % quantifier elimination of
+%\newcommand{\elimof}[2]{{\boldsymbol{\exists}} #1:#2} % quantifier elimination of
+%\newcommand{\elimof}[2]{{\exists\hspace{-3.7pt}\exists} #1:#2} % quantifier elimination of
+% \newcommand{\elimof}[2]{{\exists\hspace{-3.7pt}\exists\hspace{-3.8pt}\exists} #1:#2} % quantifier elimination of
+% \newcommand{\elimof}[2]{{\exists\hspace{-1.5mm}\exists\hspace{-1.5mm}\exists} #1:#2} % quantifier elimination of
+\newcommand{\elimof}[2]{{\mathrlap{\mathrlap{\hspace*{0.7mm}\exists}{\hspace*{0.35mm}\exists}}{\exists\hspace{0.8mm}}} #1:#2} % quantifier elimination of
+%\newcommand{\issat}[0]{\texttt{SAT}}
+\newcommand{\issat}[0]{\texttt{sat}}
+\newcommand{\issatof}[1]{\issat(#1)}
+\newcommand{\difcnts}[0]{{\neq}}
+\newcommand{\difcntsof}[1]{\;\difcnts(#1)}
+\newcommand{\inrange}[0]{\mathit{range}}
+\newcommand{\inrangeof}[1]{\inrange(#1)}
+% \newcommand{\defeq}[0]{\mathop{\stackrel{\textrm{\tiny def}}{=}}}
+\newcommand{\defeq}[0]{\mathrel{\stackrel{\textrm{\tiny def}}{=}}}
+% \newcommand{\defequiv}[0]{\mathop{\stackrel{\mathrm{def}}{\equiv}}}
+%\newcommand{\defequiv}[0]{\triangleq}
+\newcommand{\defequiv}{\defeq}
+
+%pseudocode
+\newcommand{\wl}{\mathit{Worklist}} 
+\newcommand{\wlt}{\mathit{Candidates}} %worklist of transitions
+\newcommand{\ass}{\leftarrow} %assignment
+\newcommand{\processed}{\psphere} %spehre taken from the worklist
+\newcommand{\src}{\psphere_\mathit{src}} %source pspehere of a trans
+\newcommand{\tgt}{\psphere_\mathit{tgt}} %target ...
+\newcommand{\old}{\psphere_\mathit{old}} %old psphere equivalent to a new one
+
+
+%regex and derivative related
+\newcommand{\REpreds}[1]{\textit{Preds}(#1)}
+\newcommand{\REV}[1]{#1^{\mathbf{r}}}
+\newcommand{\pair}[2]{\langle #1, #2 \rangle}
+\newcommand{\triple}[3]{\langle #1, #2, #3\rangle}
+\newcommand{\pred}[1]{#1}
+\newcommand{\eps}{\epsilon}
+\newcommand{\concat}{\cdot}
+\newcommand{\den}[2][{}]{[\![#2]\!]_{#1}}
+\newcommand{\Max}{\textit{\textbf{max}}}
+\newcommand{\Min}{\textit{\textbf{min}}}
+\newcommand{\CD}[3][{}]{\partial_{#2}^{#1}(#3)}
+\newcommand{\Minterms}[1]{\textit{Minterms}(#1)}
+\newcommand{\CounterGuard}[1]{\guard(#1)}
+\newcommand{\CounterUpdate}[2][{}]{\boldsymbol{#2}_{\!\!#1}}
+\newcommand{\CounterUpdateFormula}[1]{\varphi_{#1}}
+\newcommand{\NullCond}[1]{\boldsymbol{\epsilon}_{#1}}
+\newcommand{\subcntr}{\prec}
+%\renewcommand{\max}{\Max}
+\newcommand{\seqcomp}{\mathbb{;\,}}
+
+\newcommand{\True}{\mathit{true}}
+\newcommand{\False}{\mathit{false}}
+\newcommand{\ResetOp}[1][{}]{\textsc{set0}_{#1}}
+\newcommand{\SetOneOp}{\textsc{set1}}
+\newcommand{\InitZeroOp}{\textsc{init0}}
+\newcommand{\InitOneOp}{\textsc{init1}}
+%\newcommand{\InitOneOp}{\textsc{init}{\circ}\textsc{incr}}
+\newcommand{\ResetZeroOp}{\textsc{res0}}
+\newcommand{\ResetOneOp}{\textsc{res1}}
+\newcommand{\ExitInitOp}{\ExitOp{\circ}\InitOp}
+%\newcommand{\ExitIncrOp}{\ExitOp{\circ}\IncrOp}
+%\newcommand{\ExitIncrOp}{\ExitOp\mathtt{;}\IncrOp}
+\newcommand{\InitIncrOp}{\InitOp{\circ}\IncrOp}
+\newcommand{\AddZeroOp}{\textsc{add0}}
+%\newcommand{\AddOneOp}{\AddZeroOp{\circ}\IncrOp}
+\newcommand{\AddOneOp}{\textsc{add1}}
+
+%\newcommand{\IncrCSOp}[1][{}]{\textsc{incr}_{#1}}
+%\newcommand{\ExitCSOp}[1][{}]{\textsc{rst}_{#1}}
+%\newcommand{\ExitIncrCSOp}[1][{}]{\textsc{rst1}_{#1}}
+%\newcommand{\NoCSOp}[1][{}]{\textsc{noop}_{#1}}
+%\newcommand{\IncrCSOp}[1][{}]{\textsc{csIncr}_{#1}}
+%\newcommand{\ExitCSOp}[1][{}]{\textsc{csExit}_{#1}}
+%\newcommand{\ExitIncrCSOp}[1][{}]{\textsc{csExit1}_{#1}}
+%\newcommand{\NoCSOp}[1][{}]{\textsc{csNoop}_{#1}}
+%\newcommand{\IncrCSOp}[1][{}]{\textsc{Incr}_{#1}}
+%\newcommand{\ExitCSOp}[1][{}]{\textsc{Reset0}_{#1}}
+%\newcommand{\ExitIncrCSOp}[1][{}]{\textsc{Reset1}_{#1}}
+%\newcommand{\NoCSOp}[1][{}]{\textsc{Noop}_{#1}}
+
+
+
+\renewcommand{\Reset}[1]{#1{\mapsto}\ExitOp}
+\newcommand{\SetOne}[1]{#1{\mapsto}\SetOneOp}
+\newcommand{\Inv}[1]{\varphi_{#1}}
+
+\newcommand{\spair}[2]{\{\pair{#1}{#2}\}}
+\newcommand{\striple}[3]{\{\triple{#1}{#2}{#3}\}}
+
+%\newcommand{\id}{\textit{\O}}
+\newcommand{\id}{\textbf{\textsc{id}}}
+\newcommand{\ONE}{\spair{\id}{\emp}}
+
+\newcommand{\A}{\texttt{a}}
+\newcommand{\nA}{\texttt{[{\caret}a]}}
+\newcommand{\Loop}[2]{\texttt{#1\{\begin{math}#2\end{math}\}}}
+
+%\newcommand{\RESET}[1]{\textit{skip}(#1)}
+\newcommand{\NULL}[1]{\textit{null}(#1)}
+\newcommand{\emp}{\varepsilon}
+
+%special symbols
+\newcommand{\bslash}{\char`\\}
+\newcommand{\caret}{\char`\^}
+\newcommand{\underscore}{\char`\_}
+\newcommand{\leftbrace}{\char`\{}
+\newcommand{\rightbrace}{\char`\}}
+\newcommand{\tildechar}{\char`~}
+
+
+%equality by definition
+\newcommand{\eqdef}{\stackrel{\raisebox{-3pt}{{\textrm{\tiny def}}}}{=}}
+%the above one increases spaces between lines, ugly
+%\newcommand{\eqdef}{\mathchoice{\stackrel{\textrm{\tiny def}}{=}}{=_{\textrm{\tiny def}}}{\stackrel{\textrm{\tiny def}}{=}}{\stackrel{\textrm{\tiny def}}{=}}}
+
+
+%Boolean algebra
+\newcommand{\DOT}{\texttt{\makebox[4pt]{{\huge\texttt{{.}}}}}}
+\newcommand{\BA}{\mathcal{A}}
+\newcommand{\FALSE}{\texttt{[]}}
+
+%standard types
+\newcommand{\Bool}{\mathbb{B}}
+\newcommand{\Nat}{\mathbb{N}}
+
+
+\newcommand\termsof[1]{\mathit{terms}(#1)}
+\newcommand\substf[1]{\varphi_{#1}}
+\newcommand\init{I}
+\newcommand\final{F}
+\newcommand\outcome{\mathit{out}}
+\newcommand\successor[3]{#1\xrightarrow{#2}#3}
+\newcommand\num[1]{\mathit{num}(#1)}
+\newcommand\at[1]{\mathit{at}(#1)}
+
+\newcommand{\cnt}[0]{\mathit{cnt}}
+\newcommand{\detaut}[0]{\automaton^{d}}
+\newcommand{\detautof}[1]{\detaut_{#1}}
+\newcommand{\autcc}[0]{\automaton_{\mathit{cc}}}    %aut. for char. classes
+\newcommand{\detautcc}[0]{\detaut_{\mathit{cc}}}    %det. aut. for char. classes
+% \newcommand{\stateofcnt}[0]{\mathit{state}}
+\newcommand{\stateofcnt}[0]{\sigma}
+\newcommand{\stateofcntof}[1]{\stateofcnt(#1)}
+\newcommand{\setofspof}[1]{\lbag #1 \rbag}
+
+\newcommand{\statesdom}[0]{\mathbb{Q}}
+
+\newcommand{\re}{{r.e.}}
+\newcommand{\DOM}{\mathfrak{D}}
+\newcommand{\PRED}{\Psi}
+\newcommand{\SAT}{\textit{\textbf{Sat}}}
+\newcommand{\BDDA}{\mathcal{B}}
+\newcommand{\BIT}[1]{\beta_{#1}}
+
+\newcommand{\MIN}[1]{\textit{\textbf{min}}_{#1}}
+\newcommand{\MAX}[1]{\textit{\textbf{max}}_{#1}}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% USED SET AND COUNTER OPERATIONS AND ETSTS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\newcommand{\CanExit}[1]{\xi_{#1}}
+%\newcommand{\CanIncr}[1]{\iota_{#1}}
+\newcommand{\CanIncr}[1]{\textsc{canIncr}_{#1}}
+
+\newcommand{\Op}[1][{}]{\IndexedOp{\textsc{op}}{#1}}
+\newcommand{\IncrOp}[1][{}]{\IndexedOp{\textsc{incr}}{#1}}
+\newcommand{\NoOp}[1][{}]{\IndexedOp{\textsc{noop}}{#1}}
+
+%Version one
+%\newcommand{\CanExit}[1]{\textsc{canRst}_{#1}}
+%\newcommand{\ExitOp}[1][{}]{\IndexedOp{\textsc{rst}}{#1}}
+%\newcommand{\ExitIncrOp}[1][{}]{\IndexedOp{\textsc{rst1}}{#1}}
+%\newcommand{\IncrCSOp}[1][{}]{\textsc{incr}_{#1}}
+%\newcommand{\ExitCSOp}[1][{}]{\textsc{rst}_{#1}}
+%\newcommand{\ExitIncrCSOp}[1][{}]{\textsc{rst1}_{#1}}
+%\newcommand{\NoCSOp}[1][{}]{\textsc{noop}_{#1}}
+%\newcommand{\CanExitS}[1]{\textsc{canRst}_{#1}}
+%\newcommand{\CanIncrS}[1]{\iota_{#1}}
+
+%Varsion two
+\newcommand{\CanExit}[1]{\textsc{canExit}_{#1}}
+\newcommand{\ExitOp}[1][{}]{\IndexedOp{\textsc{exit}}{#1}}
+\newcommand{\ExitIncrOp}[1][{}]{\IndexedOp{\textsc{exit1}}{#1}}
+\newcommand{\IncrCSOp}[1][{}]{\textsc{Incr}_{#1}}
+\newcommand{\ExitCSOp}[1][{}]{\textsc{Rst}_{#1}}
+\newcommand{\ExitIncrCSOp}[1][{}]{\textsc{Rst1}_{#1}}
+\newcommand{\NoCSOp}[1][{}]{\textsc{Noop}_{#1}}
+\newcommand{\CanExitS}[1]{\textsc{canExit}_{#1}}
+\newcommand{\CanIncrS}[1]{\textsc{canIncr}_{#1}}
+%
+% The idea here is that set operations, mainly Reset, are not directly connected
+% to the counter operations of the same names. Set is reset when counters exit 
+% or when their scope is entered. 
+% The conflict "cannot exit but exitting" does not seem visible here
+% \xi still looks similar to canExit
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\SetZeroOP}[1]{\textit{Set0}_{#1}}
+\newcommand{\SetOneOP}[1]{\textit{Set1}_{#1}}
+\newcommand{\IncrOP}[1]{\textit{Incr}_{#1}}
+\newcommand{\NOOP}[1]{\textit{NOOP}_{#1}}
+
+
+\newcommand{\BDDAxA}{\BDDA\langle{\AA}\rangle}
+
+\newcommand{\PlusOne}[1]{\textit{\textbf{incr}}_{#1}}
+\newcommand{\MaxOf}[1]{\textit{Max}(#1)}
+\newcommand{\MinOf}[1]{\textit{Min}(#1)}
+\newcommand{\PlusOneZ}[1]{\textit{\textbf{incr}}_{#1}^0}
+
+\newcommand{\CounterOf}{\textit{Ctr}}
+
+\newcommand{\ExitTag}{\textsc{rst}}
+\newcommand{\IncrTag}{\textsc{incr}}
+\newcommand{\NoopTag}{\textsc{noop}}
+\newcommand{\InitTag}{\textsc{init}}
+\newcommand{\IncrInitTag}{\textsc{incr0}}
+\newcommand{\Tag}{\textsc{tag}}
+\newcommand{\DFA}{\textsc{dfa}}
+
+\newcommand{\NFAof}[1]{\textit{FA}(#1)}
+\newcommand{\DFAof}[1]{\textit{DFA}(#1)}
+\newcommand{\IFAof}[1]{\textit{s-IA}(#1)}
+
+\newcommand{\RANGE}[1]{\textit{InRange}_{#1}}
+
+\newcommand{\CountersOf}{\textit{\textbf{cs}}}
+
+\newcommand{\FinCond}[1]{F\ifthenelse{\equal{#1}{}}{}{(#1)}}
+
+
+\newcommand{\IfThenElse}[3]{\textit{\textbf{if}}\;#1\;\textit{\textbf{then}}\;#2\;\textit{\textbf{else}}\;#3}
+
+\newcommand{\Init}{\textit{Init}}
+
+\newcommand{\OPS}{\mathcal{O}}
+
+\newcommand{\CVType}[1]{\mathfrak{#1}}
+\newcommand{\CUType}[1]{\OPS_{#1}}
+\newcommand{\CounterPreds}[1]{\Psi_{#1}}
+
+\newcommand{\CS}[1]{#1'}
+%\newcommand{\CS}[1]{\ddot {#1}}
+%\newcommand{\CS}[1]{\widehat{#1}}
+%\newcommand{\CS}[1]{\hat{#1}}
+%\newcommand{\CS}[1]{\bar {#1}}
+%\newcommand{\CS}[1]{\tilde{#1}}
+%\newcommand{\CS}[1]{#1^{\mathsf{s}}}
+%\newcommand{\CS}[1]{#1^{\circ}}
+%\newcommand{\CS}[1]{\mathfrak{#1}}
+%\newcommand{\CS}[1]{\mathbbm{#1}}
+%\newcommand{\CS}[1]{\mathbbmss{#1}}
+%\newcommand{\CS}[1]{\bar {#1}}
+%\newcommand{\CS}[1]{\bar {#1}}
+%\newcommand{\CS}[1]{\dot {#1}}
+%\newcommand{\CS}[1]{{#1}^{\circledS}}
+%\newcommand{\CS}[1]{{#1}^{\{\}}}
+
+\renewcommand{\AA}{\mathbb{A}}
+\newcommand{\II}{\mathbb{I}}
+\newcommand{\CC}{\mathbb{C}}
+%\newcommand{\CCS}{\mathbb{C}_{\!\!\!s}}
+%\newcommand{\CCS}{\mathfrak{C}}
+\newcommand{\CCS}{\mathbb{S}}
+%\newcommand{\CCS}{\mathbb{\CS{C}}}
+\newcommand{\BB}{\mathbb{B}}
+%\newcommand{\AACCS}{\mathbb{A}{\cdot}\CCS}
+\newcommand{\AACCS}{\mathbb{A}{\times}\CCS}
+%\newcommand{\IICCS}{\mathbb{I}{\cdot}\CCS}
+\newcommand{\IICCS}{\mathbb{I}{\times}\CCS}
+\newcommand{\AACC}{\AA{\cdot}\CC}
+\newcommand{\IICC}{\II{\cdot}\CC}
+\newcommand{\AB}{\mathbb{A}{\times}\mathbb{B}}
+
+\newcommand{\Den}[1]{\boldsymbol{#1}}
+\newcommand{\CSA}{CsA\xspace}
+\newcommand{\CA}{\textrm{CA}\xspace}
+
+%\newcommand{\prodp}[2]{#1{\cdot}#2}
+\newcommand{\prodp}[2]{#1{\wedge}#2}
+
+\newcommand{\mem}{\mathfrak{m}}
+
+\newcommand{\smem}{\mathfrak{s}}
+
+\newcommand{\PowerSet}[1]{\mathcal{P}(#1)}
+%\newcommand{\PowerSetNE}[1]{\mathcal{P}_0(#1)}
+\newcommand{\PowerSetNE}[1]{\mathcal{P}_{\text{fin}}(#1)}
+
+\newcommand{\PowerState}{S}
+\newcommand{\CountingSet}{V}
+
+\newcommand{\PreCond}[1]{\varphi_{#1}}
+
+\newcommand{\scope}{\sigma}
+%\newcommand{\TrOps}{\omega}
+\newcommand{\TrOps}{\textsc{op}}
+\newcommand{\undefVal}{\bot}
+\newcommand{\bigo}{\mathcal O}
+\newcommand{\bigOof}[1]{\bigo(#1)}
+%\newcommand{\CO}{\textsc{Op}}
+%\newcommand{\CO}{\CS{op}}
+\newcommand{\CO}{\textsc{op}}
+
+
+\newcommand{\precond}{\phi^{\textrm{pre}}}
+
+
+\newcommand{\decl}{\sigma^{\textrm{\tiny{-1}}}}
+
+\newcommand{\Iff}{\Longleftrightarrow}
+
+
+%\newcommand{\fincond}[1]{\varphi^{\textrm{fin}}_{#1}}
+\newcommand{\fincond}[1]{\textit{fin}(#1)}
+
+\newcommand{\chara}{\texttt{a}}
+
+
+\newenvironment{ex}{\begin{example}}{
+\qed
+\end{example}}
+
+\newenvironment{exnoqed}{\begin{example}}{
+\end{example}}
+
+\newcommand{\consistent}{\Delta_{R,\alpha , \beta}}
+\newcommand{\incoming}{\mathit{incoming}}
+\newcommand{\interesting}{\mathit{interesting}}
+\newcommand{\nonzero}{\scope}
+
+\newcommand{\vc}[1]{\begin{tabular}{@{}l@{}}#1\end{tabular}}
+
+
+\newcommand{\CharClass}{\textit{CharClass}}
+
+
+\newcommand{\bs}[1]{\mathbf{#1}}
+
+%\newcommand{\grep}[0]{\texttt{grep}\xspace}
+%\newcommand{\retwo}[0]{\textsc{RE2}\xspace}
+
+\newcommand{\grep}[0]{\texttt{grep}\xspace}
+\newcommand{\retwo}[0]{\texttt{RE2}\xspace}
+\newcommand{\srm}[0]{\texttt{SRM}\xspace}
+\newcommand{\dotnet}[0]{\texttt{.NET}\xspace}
+\newcommand{\catool}[0]{\texttt{Cavil}\xspace}
+\newcommand{\rex}[0]{\texttt{rxxr2}\xspace}
+\newcommand{\regexStatic}[0]{\texttt{regexStatic}\xspace}
+\newcommand{\rexploiter}[0]{\texttt{rexploiter}\xspace}
+\newcommand{\FA}{FA\xspace} %I changed s-FA to FA, since we do not use FA, and CA, CsA is wihout s-, and s-FA is a bit heavy. But it can be changed back.
+\newcommand{\timeout}[0]{TO\xspace}
+
+% \newcommand{\derivpic}[1]{(#1)}
+\newcommand{\derivpic}[1]{\lbag #1 \rbag}
+
+
+\newcommand{\incr}[2]{#1(#2{+}{+})}
+
+
+\newcommand{\DERIV}[3]{\boldsymbol{\partial}^{#1}_{#2}(#3)} %derivative
+
+
+
+%---- (possibly indexed) operation macros
+
+\newcommand{\IndexedOp}[2]{#1_{#2}}
+
+
+\newcommand{\InitOp}[1][{}]{\textsc{init}_{#1}}
+
+
+\newcommand{\update}[1]{\mathit{upd}(#1)}
+\newcommand{\Update}[1]{\mathbf{#1}}
+\newcommand{\guard}[1]{\mathit{grd}(#1)}
+\newcommand{\Guard}[1]{\varphi_{#1}}
+
+
+\newcommand{\BraceIfThenElse}[3]{
+\left\{
+\begin{array}{@{}ll@{}}
+#2 & \textrm{if}\; #1 \\
+#3 & \textrm{otherwise}
+\end{array}
+\right.
+}
+
+
+\newcommand{\blambda}{\boldsymbol{\lambda}}
+
+\newcommand{\Qnca}[0]{Q_{N}}
+
+\newcommand{\rewrites}{\leadsto}
+
+
+\newcommand{\LPAR}{\textrm{\Large(}}
+\newcommand{\RPAR}{\textrm{\Large)}}
+
+
+\newcommand{\VISIBLE}[1]{\textit{Visible}(#1)}
+\newcommand{\HIDDEN}[1]{\textit{Hidden}(#1)}
+\newcommand{\COUNTERS}[1]{\textit{Counters}(#1)}
+\newcommand{\RESET}[1]{\textbf{rst}_{#1}}
+
+%language in state q
+%\newcommand{\Lq}[2][{}]{\mathscr{L}_{#1}(#2)}
+\newcommand{\Lq}[2][{}]{\mathcal{L}_{#1}(#2)}
+
+\newcommand{\lang}[0]{\mathcal{L}} %language
+\newcommand{\langof}[1]{\lang(#1)} %language of
+
+\newcommand{\memInit}{\boldsymbol{0}}
+
+\newcommand{\LANG}[2]{\mathbf{L}^{#1}(#2)} %language relative to counter state
+
+
+\newcommand{\CDp}[2][+]{\partial^{#1}(#2)}
+
+% \newcommand{\fragmenteasy}[0]{\textsc{Fragment}\xspace}
+\newcommand{\fragmenteasy}[0]{\textsc{Aligned}\xspace}
+\newcommand{\fragmenteqlen}[0]{$k$-\textsc{adic}\xspace}
+\newcommand{\condof}[1]{\textsc{Cond}$_{#1}$}
+% \newcommand{\unmark}[0]{\mathit{unmark}}
+% \newcommand{\unmarkof}[1]{\unmark(#1)}
+\newcommand{\unmark}[0]{\unmarkof \cdot}
+\newcommand{\unmarkof}[1]{\lfloor #1 \rfloor}
+
+
+\newcommand{\SIZEOF}[1]{\sharp(#1)}
+\newcommand{\LEAFCNT}[1]{\sharp_{\Psi}(#1)}
+
+\newcommand{\figtrans}[2]{#1 / #2}
+\newcommand{\figtranstwoline}[2]{\begin{array}{c}#1 /\\ #2\end{array}}
+
+\newcommand{\pstateof}[1]{#1^\mathit{DFA}}
+\newcommand{\notacl}{\regex{[\string^a]}}
+\newcommand{\acl}{\regex{a}}
+
+% continuation of regex in the table
+\newcommand{\recont}[0]{\textcolor{gray}{$\sim$}}
+\newcommand{\mrtwo}[1]{\multirow{2}{*}{#1}}
+

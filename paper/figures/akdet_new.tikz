@@ -1,0 +1,38 @@
+\tikzset{every state/.style={minimum size=15pt}}
+\tikzset{mstatestyle/.style={draw,rectangle,rounded corners,fill=blue!0}}
+\tikzset{bendyr/.style={bend right=17}}
+\tikzset{bendyl/.style={bend left=17}}
+\begin{tikzpicture}[shorten >=1pt,on grid]
+  \node (init) {};
+  \node[mstatestyle,right of=init,node distance=18mm]   (q_0)
+    {$\{q\}$};
+
+  \node[mstatestyle,node distance=4.5cm,accepting,label={right:$\{\MaxOf c \geq 100\}$}] (q_1) [right=of q_0]
+    {$\{q, s\}$};
+
+  %\node[mstatestyle,right of=init,node distance=18mm]   (q_0)
+   % {$\{\regex{.*a.\{100\}}\}$};
+  %\node[mstatestyle,node distance=3.8cm,accepting,label={right:$\{\MaxOf c \geq 100\}$}] (q_1) [right=of q_0]
+    %{$\{\regex{.*a.\{100\}}, \regex{.\{100\}}\}$};
+
+  \path[->] (init) edge               node[above] {$c:=\{0\}$} (q_0);
+  \path[->] (q_0) edge[loop above]    node
+            {\regex{[\string^a]}} ();
+
+  \path[->] (q_0) edge[bendyl]        node[above,align=center]
+              {\regex{a}} (q_1);
+
+  \path[->] (q_1) edge [loop above]   node[above,xshift=10mm,yshift=0mm,align=center]
+              {$\figtrans{\regex{a}}{c := \{0\} \cup
+              c+1}$} ();
+
+  \path[->] (q_1) edge [loop below]   node[below,xshift=14mm,yshift=0mm,align=center]
+              {$\figtranstwoline{\regex{[\string^a]} \land \MinOf c < 100}{c :=
+              c+1}$} ();
+
+  \path[->] (q_1) edge [bendyl]       node[below,xshift=0mm,yshift=0mm,align=center]
+              {$\figtranstwoline{\regex{[\string^a]} \land \MinOf c \geq 100}{c := \{0\}}$} (q_0);
+
+\end{tikzpicture}
+
+

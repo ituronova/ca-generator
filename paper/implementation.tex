@@ -1,0 +1,79 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Implementation}\label{sec:Implementation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+We discuss some important implementation details relating to the
+implementations of $\II$, $\CC$, $\CCS$, and the product algebra
+$\IICCS$, and their role in the {\CA} determinization algorithm.
+All algorithms are implemented in C\# using the open source Microsoft.Automata
+library~\cite{automata_library}.
+
+%------------------------------------------------------------------------------
+\paragraph{BDD algebra.}
+%------------------------------------------------------------------------------
+
+We use an effective Boolean algebra $\BDDA$ that we call a
+\emph{BDD algebra} with universe $\nat$. The basic
+predicates of $\BDDA$ have the form $\BIT{i}$ where $i\geq 0$ is a bit
+position and $\den[\BDDA]{\BIT{i}}$ is the set of all
+$n$ whose $i$'th bit in binary is 1.  $\PRED_\BDDA$ consists of BDDs
+and its Boolean operations are corresponding BDD operations.  We write
+$|$ for $\vee_{\BDDA}$, $\&$ for $\wedge_{\BDDA}$, and
+$\overline{\psi}$ for $\neg_{\BDDA}\psi$.
+
+%------------------------------------------------------------------------------
+\paragraph{Algebras $\CC$ and $\CCS$.}
+%------------------------------------------------------------------------------
+
+We use $\BDDA$ to encode predicates over a given collection of counters
+$c_i$ for $0\leq i \leq k$ as follows.
+We represent the condition $\CanExit{i}$ with the $\BDDA$-predicate
+$\BIT{2i}$ and the condition $\CanIncr{i}$ with the $\BDDA$-predicate
+$\BIT{2i+1}$. Thus, assuming $c_i$ is in its valid range, in $\CC$,
+\begin{itemize}
+  \item $\BIT{2i}\& \BIT{2i+1}$ represents the case $\MIN{i} \leq c_i <  \MAX{i}$,
+  \item $\BIT{2i}\& \overline{\BIT{2i+1}}$ represents the case $c_i =  \MAX{i}$,
+  \item $\overline{\BIT{2i}}\& \BIT{2i+1}$ represents the case $c_i <  \MIN{i}$.
+\end{itemize}
+The predicate $\overline{\BIT{2i}}\& \overline{\BIT{2i+1}}$ represents
+the impossible condition that $c_i < \MIN{i}$ and $\MAX{i} \leq c_i$.
+Therefore, the predicate $\BIT{2i}|\BIT{2i+1}$ is used to elimiate the
+impossible case and is always asserted in conjunction with any counter
+predicate for $c_i$.
+Analogously for $\CCS$ because we work with nonempty sets.
+
+%------------------------------------------------------------------------------
+\paragraph{Input algebra $\II$.}
+%------------------------------------------------------------------------------
+
+Given a collection of character classes, obtained from a regex $R$, we
+first compute all the minterms over those character classes. Let the
+minterms be $\Sigma = \{\alpha_i\}_{i<k}$. It turns out that not only is there
+no explosion in the size of $\Sigma$ but in almost all
+cases $k\leq 64$.  Due to the low value of $k$, each
+minterm $\alpha_i$ in $\PRED_{\II}$ is represented internally by the
+number $2^i$ and conjunction of predicates is bit-wise-and, complement
+is bit-wise-complement of numbers, where the type of those numbers
+is typically \texttt{UInt64}.
+
+
+%------------------------------------------------------------------------------
+\paragraph{Product algebra $\IICCS$.}
+%------------------------------------------------------------------------------
+We lift the algebra $\BDDA$ into a multi-terminal BDD algebra, whose
+terminal algebra is a $\II$.  This lifting gives us the implementation
+of the Cartesian product $\IICCS$ of $\II$ with $\CCS$, and allows us
+to work seamlessly, and parametrically with input predicate conditions
+in combination with counter conditions. This allows us to leverage
+symbolic automata algorithms over the alphabet $\IICCS$. In
+particular, the basic implementation of the determinization algorithm
+of {\CA}s uses several underlying support algorithms of symbolic
+automata modulo $\IICCS$.  In particular, during the main step of the
+algorithm, mintermization is localized to powerstates, e.g., some
+powerstate may have a local minterm such as
+$\prodp{(\alpha_1\vee\alpha_7)}{\top_{\CCS}}$ if the different cases
+do not matter locally. However, the
+determinization algorithm for symbolic automata can not be used
+``as is'' because it will not be able to ditinguish between
+counter minterms and will overapproximate target powerstates.
+

@@ -1,0 +1,751 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Correctness of Conditional Partial Derivatives}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%==============================================================================
+\subsection{Validity of Memories and Visibility of Counters}
+%==============================================================================
+
+% We are using the parametric definition below with conditional derivatives.
+
+We need the following additional notions in order to reason about correctness of
+the construction of CAs from regexes via conditional partial derivatives.
+%
+Let $R$ be a normalized regex. 
+%
+A counter $X$ \emph{is visible in} $R$, denoted
+$X\in\VISIBLE{R}$, if either $R=YZ$ and $X=Y$, or else if
+$X$ does not occur in $Y$ and $X$ is visible in $Z$, i.e.,
+$X\in\VISIBLE{Z}\setminus\COUNTERS{Y}$. In other words,
+%
+\[
+\VISIBLE{R}
+=
+\left\{
+\begin{array}{ll}
+  \emptyset, &\textrm{if $R=\emp$;}\\
+  \{S\{\ell,k\}\}\cup(\VISIBLE{Z}\setminus\COUNTERS{S}), &\textrm{else if $R=S\{\ell,k\}Z$;}\\
+  \VISIBLE{Z}\setminus\COUNTERS{Y}, & \textrm{otherwise, where $R=YZ$.}
+\end{array}
+\right.
+\]
+Let
+$\HIDDEN{R}\eqdef\COUNTERS{R}\setminus\VISIBLE{R}$.  A counter memory
+$\mem$ is \emph{valid for} $R$ if $\mem(X)=0$ for all
+$X\in\HIDDEN{R}$, otherwise $\mem$ is \emph{invalid} for $R$.
+Intuitively, every hidden counter in $R$ must have the initial value
+0 in any valid memory.  We only consider counter memories $\mem$ that
+are valid for $R$ in the context of $\LANG{\mem}{R}$.
+%\lh{I was lost before Margus gave me some intuition motivating the Scp. Maybe some of it could go before or after the formal def of Scp. 
+%My understanding now is that Scp is trying to capture the set of counters that can be non-zero in memories at this point, memories that are produced by starting from the original regex with the all-zero memory. Scp is only (over?)approximating this set of potentially non-zero counters. For understanding the definition, it is also needed to understand that in $R = YZ$, $Y$ can be an inner loop within the outer loop $Z$, and the $YZ$ could have been obtained by unfolding $Z$ once when computing a derivative, so both counters $Y$ and $Z$ can be non-zero. The definition was not making sense to me before realizing this.}
+%\mv{but I think this explanation is too early here, there is the chicken-egg problem}
+
+\begin{ex}
+  Let $X=\texttt{a\{3\}}$. Then $X$ is visible in $X\cdot X*$ but hidden
+  in $X{*}\cdot X$. A counter memory $\mem$ such that $\mem(X)=2$ is valid for $X\cdot X*$
+  but invalid for $X{*}\cdot X$.
+\end{ex}
+
+\begin{ex}
+Let $X$ be the regex \texttt{(a(bc)\{7\}d)\{8\}}. Then $X$ and $Y =
+\texttt{(bc)\{7\}}$ are both counters in $X$ but only $X$ is visible
+in $X$.  Now consider the regex $Y\texttt{d}X$, or more precisely
+$Y\cdot (\texttt{d}\cdot X)$ to emphasize the normalized form.  In
+this case $\VISIBLE{Y\texttt{d}X}=\{X,Y\}$.  The visible counters of
+$\texttt{c}Y\texttt{d}X$ are $\{X,Y\}$.  In fact, as shown below,
+$\spair{\IncrOp[X]}{Y\texttt{d}X}$ is the (conditional)
+$\texttt{a}$-derivative of $X$ and
+$\spair{\IncrOp[Y]}{\texttt{c}Y\texttt{d}X}$ is the
+$\texttt{b}$-derivative of $Y\texttt{d}X$.
+These are in fact the only possible regexes that arise here through derivation starting with $X$.
+The \texttt{c}-derivative of $\texttt{c}Y\texttt{d}X$ is
+$\spair{\blambda x.x}{Y\texttt{d}X}$, and the \texttt{d}-derivative of
+$Y\texttt{d}X$ is $\spair{\ExitOp[Y]}{X}$. All other derivatives are empty.
+\end{ex}
+
+We use the following lemma in the correctness theorem of partial derivatives.
+If $E$ is a set of counters, then $\RESET{E}$ resets the values of all counters
+in $E$ to 0. Observe that $\RESET{\{c\}}$ is in general different from
+$\ExitOp[c]$ because $\ExitOp[c](\mem)=\bot$ when $\mem\not\models\CanExit{c}$.
+
+In the proof of the lemma (and also multiple further proofs), we will need the
+notion of the \emph{size} of a regex $R$, denoted by $\SIZEOF{R}$, which
+corresponds to the number of nodes in the abstract syntax tree of $R$
+(apart from the case when $R$ is $\eps$) and which we define as follows:
+
+\[
+\begin{array}{l}
+\SIZEOF{\emp}=0\quad \SIZEOF{\pred{\alpha}}=1 \quad
+\SIZEOF{R_1\cdot R_2} = \SIZEOF{R_1}+\SIZEOF{R_2}+1\quad \\
+    \SIZEOF{R_1 | R_2} = \SIZEOF{R_1}+\SIZEOF{R_2}+1\quad
+    \SIZEOF{R\{n,m\}}=\SIZEOF{R}+1\quad
+    \SIZEOF{R{*}}=\SIZEOF{R}+1\quad
+\end{array}
+\]
+
+\begin{lemma}
+\label{lemma:RESET}
+  If $X$ and $Y$ are normalized regexes and $\mem$ is valid for $XY$ then
+  \em
+\[
+\LANG{\mem}{XY} = \LANG{\mem}{X}\cdot\LANG{\RESET{\VISIBLE{X}}(\mem)}{Y}.
+\]
+\end{lemma}
+\begin{proof}
+  By induction over the pair $(\SIZEOF{X},n)$ where $n=\MAX{c}-\mem(c)$ if $X$
+  starts with a counter $c$ or else $n=0$. Let $(m',n')<(m,n)$ iff either $m' < m$
+  or else $m'=m$ and $n'<n$.
+ 
+  \paragraph{Base case $X=\emp$}
+  Then $\RESET{\VISIBLE{\eps}}(\mem)=\mem$
+  and $\LANG{\mem}{\emp}=\{\eps\}$.
+  
+  \paragraph{Induction case $X=S\{\ell,k\}Z$}
+  Let $c = S\{\ell,k\}$, $\mem_0=\ExitOp[c](\mem)$ and $\mem_1=\IncrOp[c](\mem)$.
+
+    \begin{itemize}
+
+    \item Case $\mem(c)=\MAX{c}$.
+        Then $\mem_1=\bot$ and $\mem_0$ is
+  valid for $ZY$ because $\mem$ is valid for $XY$ and $\mem_0(c)=0$.
+  (Observe that if $d\in\HIDDEN{ZY}$
+  then either $\mem_0(d)=0$ if $d=c$ or else $\mem(d)=0$ because then
+  $d\in\HIDDEN{XY}$.)
+  It follows that
+  \begin{eqnarray*}
+    \LANG{\mem}{XY} &\stackrel{(\mem_1=\bot)}{=}& \LANG{\mem_0}{ZY} \\
+    &\stackrel{\textrm{(IH)}}{=}&
+    \LANG{\mem_0}{Z}\cdot\LANG{\RESET{\VISIBLE{Z}}(\mem_0)}{Y} \\
+    &\stackrel{(\mem_1=\bot)}{=}&
+    \LANG{\mem}{X}\cdot\LANG{\RESET{\VISIBLE{Z}}(\ExitOp[c](\mem))}{Y} \\
+    &=&
+    \LANG{\mem}{X}\cdot\LANG{\RESET{\VISIBLE{X}}(\mem)}{Y} 
+  \end{eqnarray*}
+  where the last equality holds because $\VISIBLE{X}=\{c\}\cup(\VISIBLE{Z}\setminus\COUNTERS{S})$ and
+  $\mem(d)=0$ for all $d\in\COUNTERS{S}$ because $\mem$ is valid for $X$.
+  Hence $\RESET{\VISIBLE{Z}}(\ExitOp[c](\mem)) = \RESET{\VISIBLE{X}}(\mem)$.
+  
+    \item Case $\mem(c)<\MIN{c}$:
+  Then $\mem_0=\bot$.
+%  Also $S$ is not nullable because $X$ is normalized and $\ell > 0$.
+  Here
+  $\mem_1$ is valid for $XY$ because $\mem$ is valid and $c\in\VISIBLE{XY}$.
+  Also, the (IH) applies because $k-\mem_1(c) < k-\mem(c)$.
+  \begin{eqnarray*}
+    \LANG{\mem}{XY} &\stackrel{(\mem_0=\bot)}{=}&
+    \LANG{\mem}{S}\cdot\LANG{\mem_1}{XY}\\
+    &\stackrel{\textrm{(IH)}}{=}&
+    \LANG{\mem}{S}\cdot\LANG{\mem_1}{X}\cdot\LANG{\RESET{\VISIBLE{X}}(\mem_1)}{Y} \\
+    &\stackrel{(c\in\VISIBLE{X})}{=}&
+    \LANG{\mem}{S}\cdot\LANG{\mem_1}{X}\cdot\LANG{\RESET{\VISIBLE{X}}(\mem)}{Y} \\
+    &\stackrel{(\mem_0=\bot)}{=}&
+    \LANG{\mem}{X}\cdot\LANG{\RESET{\VISIBLE{X}}(\mem)}{Y}
+  \end{eqnarray*}
+
+\item Case $\MIN{c} \leq \mem(c) < \MAX{c}$.
+  Then $\mem_0\neq\bot$ and $\mem_1\neq\bot$.
+  This case is a combination of the above two cases where the IH is applied twice
+  under similar conditions.
+  \begin{eqnarray*}
+    \LANG{\mem}{XY} &=&
+    \LANG{\mem}{S}\cdot\LANG{\mem_1}{XY}\cup\LANG{\mem_0}{ZY}\\
+    &\stackrel{\textrm{($2\times$IH)}}{=}&
+    \LANG{\mem}{S}\cdot\LANG{\mem_1}{X}\cdot\LANG{\RESET{\VISIBLE{X}}(\mem_1)}{Y}\cup
+    \LANG{\mem_0}{Z}\cdot\LANG{\RESET{\VISIBLE{Z}}(\mem_0)}{Y} \\
+     &=&
+    \LANG{\mem}{S}\cdot\LANG{\mem_1}{X}\cdot\LANG{\RESET{\VISIBLE{X}}(\mem)}{Y}\cup 
+    \LANG{\mem_0}{Z}\cdot\LANG{\RESET{\VISIBLE{X}}(\mem)}{Y} \\
+    &=&
+    \LPAR \LANG{\mem}{S}\cdot\LANG{\mem_1}{X}\cup 
+    \LANG{\mem_0}{Z}\RPAR \cdot\LANG{\RESET{\VISIBLE{X}}(\mem)}{Y} \\
+    &=&
+    \LANG{\mem}{X}\cdot\LANG{\RESET{\VISIBLE{X}}(\mem)}{Y}
+  \end{eqnarray*}
+
+  
+    \end{itemize}
+    
+    \paragraph{Induction case $X=\psi Z$}    Trivially $\VISIBLE{X}=\VISIBLE{Z}$.
+    \begin{eqnarray*}
+      \LANG{\mem}{XY} &=& \den{\psi}\cdot \LANG{\mem}{ZY} \\
+      &\stackrel{\textrm{(IH)}}{=}&
+      \den{\psi}\cdot \LANG{\mem}{Z}\cdot\LANG{\RESET{\VISIBLE{Z}}(\mem)}{Y} \\
+    &=&
+    \LANG{\mem}{X}\cdot\LANG{\RESET{\VISIBLE{X}}(\mem)}{Y}
+    \end{eqnarray*}
+
+    \paragraph{Induction case $X=(A|B)Z$} Let $X_1=AZ$ and $X_2=BZ$.
+    Here $\VISIBLE{X}=\VISIBLE{Z}\setminus\COUNTERS{A|B}$.
+    Thus, for all $c\in\COUNTERS{A|B}$, $\mem(c)=0$ because
+    $\mem$ is valid for $X$. Therefore,
+    if $c\in\VISIBLE{X_i}$ then either $c\in\VISIBLE{X}$ or else
+    $c\in\COUNTERS{A|B}$ and $\mem(c)=0$. Hence
+    $\RESET{\VISIBLE{X_i}}(\mem) = \RESET{\VISIBLE{X}}(\mem)$.
+    \begin{eqnarray*}
+      \LANG{\mem}{XY} &=& \LANG{\mem}{X_1Y} \cup  \LANG{\mem}{X_2Y} \\
+      &\stackrel{\textrm{($2\times$IH)}}{=}&
+      \LANG{\mem}{X_1}\cdot\LANG{\RESET{\VISIBLE{X_1}}(\mem)}{Y}\cup
+      \LANG{\mem}{X_2}\cdot\LANG{\RESET{\VISIBLE{X_2}}(\mem)}{Y}\\
+      &=&
+      \LANG{\mem}{X_1}\cdot\LANG{\RESET{\VISIBLE{X}}(\mem)}{Y}\cup
+      \LANG{\mem}{X_2}\cdot\LANG{\RESET{\VISIBLE{X}}(\mem)}{Y}\\
+      &=&
+      (\LANG{\mem}{X_1}\cup
+      \LANG{\mem}{X_2})\cdot\LANG{\RESET{\VISIBLE{X}}(\mem)}{Y}\\
+    &=&
+    \LANG{\mem}{X}\cdot\LANG{\RESET{\VISIBLE{X}}(\mem)}{Y}
+    \end{eqnarray*}
+
+    \paragraph{Induction case $X=S{*}Z$}
+    Clearly $\mem$ is valid for $Z$ because it is valid for $X$.
+    Here $\VISIBLE{X}=\VISIBLE{Z}\setminus\COUNTERS{S}$.
+    So if $c\in\VISIBLE{Z}$ then either $c\in\VISIBLE{X}$ or else 
+    $\mem(c)=0$. Thus
+    $\RESET{\VISIBLE{Z}}(\mem) = \RESET{\VISIBLE{X}}(\mem)$.
+        \begin{eqnarray*}
+      \LANG{\mem}{XY} &=& \LANG{\mem}{S}^* \cdot\LANG{\mem}{ZY} \\
+      &\stackrel{\textrm{(IH)}}{=}&
+      \LANG{\mem}{S}^* \cdot
+      \LANG{\mem}{Z}\cdot\LANG{\RESET{\VISIBLE{Z}}(\mem)}{Y}
+      \\
+      &=&
+      \LANG{\mem}{S}^* \cdot
+      \LANG{\mem}{Z}\cdot\LANG{\RESET{\VISIBLE{X}}(\mem)}{Y}
+      \\
+      &=&
+    \LANG{\mem}{X}\cdot\LANG{\RESET{\VISIBLE{X}}(\mem)}{Y}
+    \end{eqnarray*}
+The statement follows by the induction principle.
+\end{proof}
+
+%==============================================================================
+\subsection{Proof of Theorem~\ref{thm:LANG}}\label{app:thmLANG}
+%==============================================================================
+
+First note that $\memInit$ is trivially valid for any regex $R$.
+%
+Let $S\{0,0\}\eqdef\emp$ and let $m\ominus n \eqdef \max(m-n,0)$.
+%
+The following property is used below.  
+
+\begin{lemma}
+  \label{lemma:COUNTING}
+  Let $X=S\{\ell,k\}$ be a normalized counting loop and let $\mem$ be valid for $X$. Then
+  $$
+   \LANG{\mem}{X} = \bigcup_{i=\ell\ominus \mem(X)}^{k-\mem(X)}\LANG{\memInit}{S}^{(i)}.
+  $$
+\end{lemma}
+\begin{proof}
+    By induction over $k-n$ where
+   $n=\mem(X)$. Let $\mem_1=\IncrOp[X](\mem)$. Let $L=\LANG{\memInit}{S}$.
+
+  \paragraph{Base case $n=k$}
+  Then $\mem_1=\bot$ and so
+  $\LANG{\mem}{X}=\LANG{\ExitOp[X](\mem)}{\emp} = \{\eps\}$
+  because $\ell \leq k$ and so $\mem\models\CanExit{X}$ and, by definition,
+  $L^{(0)}=\{\eps\}$ for any $L$.
+
+  \paragraph{Induction case $n<k$}
+   Here $m_1\neq\bot$ and $\LANG{\mem}{S}=\LANG{\memInit}{S} = L$ because $\VISIBLE{X}=\{X\}$.
+\begin{eqnarray*}
+  \LANG{\mem}{X} &=&  \LANG{\mem}{S}\cdot\LANG{\mem_1}{X}\cup\LANG{\ExitOp[X](\mem)}{\emp} \\
+  &=& L\cdot\LANG{\mem_1}{X}\cup\{\eps\mid \ell\leq n\} \\
+  &\stackrel{\textrm{(IH)}}{=}&
+  L\cdot
+  \LPAR
+  \bigcup_{i=\ell\ominus (n+1)}^{k-(n+1)}L^{(i)}
+  \RPAR
+  \cup\{\eps\mid \ell\leq n\}\\
+  &=&
+  \LPAR
+  \bigcup_{i=(\ell\ominus (n+1))+1}^{k-n}L^{(i)}
+  \RPAR
+  \cup\{\eps\mid \ell\leq n\} \quad = \quad
+  \bigcup_{i=\ell\ominus n}^{k-n}L^{(i)}
+\end{eqnarray*}
+The last two equalities use standard rules of set theory and theory of sequences.
+\end{proof}
+
+We can now prove Theorem~\ref{thm:LANG}.
+
+\begin{proof}
+  By induction over $\SIZEOF{R}$.
+  The base case $R=\emp$ is trivial.
+  The main induction case is
+  $R=S\{\ell,k\}Z$. Then
+  \begin{eqnarray*}
+    \LANG{\memInit}{R}&\stackrel{(\textrm{Lemma~\ref{lemma:RESET}})}{=}&
+    \LANG{\memInit}{S\{\ell,k\}} \cdot
+    \LANG{\memInit}{Z} \\
+    &\stackrel{(\textrm{Lemma~\ref{lemma:COUNTING}})}{=}&
+    \LPAR \bigcup_{i=\ell}^{k}\LANG{\memInit}{S}^{(i)}\RPAR \cdot
+    \LANG{\memInit}{Z}
+    \\
+    &\stackrel{(2\times \textrm{IH})}{=} &
+    \LPAR \bigcup_{i=\ell}^{k}\langof{S}^{(i)}\RPAR \cdot
+    \langof{Z} \\
+    &=&
+    \langof{S\{\ell,k\}}\cdot\langof{Z} \\
+    &=&
+    \langof{R}
+  \end{eqnarray*}
+  The remaining cases follow by induction.
+\end{proof}
+
+%==============================================================================
+\subsection{Proof of Theorem~\ref{theorem:CD}\label{app:thmCD}}
+%==============================================================================
+
+\begin{proof}
+  By induction over $\SIZEOF{R}$.
+ 
+  \paragraph{Base case $R=\emp$.}
+  Holds because $\CD{\alpha}{\emp}=\emptyset$ and $\mem\models\top$ for any $\mem$.
+
+  \paragraph{Base case $R=\psi Z$}
+  Here $R$ is not nullable.
+We use the assumption that $\Sigma$ is a set of minterms
+which implies that $\den{\psi} = \den{\bigvee\Gamma}$ for some $\Gamma\subseteq\Sigma$
+and $\psi\land\alpha$ is unsatisfiable for all $\alpha\in\Sigma\setminus\Gamma$.
+\begin{eqnarray*}
+  \LANG{\mem}{\psi Z} &=& \den{\psi}\cdot\LANG{\mem}{Z} \\
+  &=& \bigcup_{\alpha\in\Sigma}\den{\alpha}\cdot\BraceIfThenElse{\alpha\land\psi\;\textrm{is satisfiable}}{
+    \LANG{\mem}{\spair{\id}{Z}}}{\emptyset}\\
+  &=& \bigcup_{\alpha\in\Sigma}\den{\alpha} \cdot \LANG{\mem}{\CD{\alpha}{\psi Z}} \\
+  &\stackrel{\CanExit{R}=\bot}{=}&
+  \LPAR\bigcup_{\alpha\in\Sigma}\den{\alpha} \cdot \LANG{\mem}{\CD{\alpha}{\psi Z}}\RPAR
+  \cup \{\eps\mid\mem\models\CanExit{R}\}\\
+\end{eqnarray*}
+
+\paragraph{Induction case $R= XZ$ where $X=S\{\ell,k\}$ is a counting loop}
+Let $\mem_1 = \IncrOp[X](\mem)$ and let
+  $\mem_0=\ExitOp[X](\mem)$.  Observe that $\mem_1=\bot$ iff
+  $\mem(X)=k$ and $\mem_0=\bot$ iff $\mem(X)<\ell$.  Note also that if
+  $\mem_1=\bot$ then $\mem_0\neq\bot$ because $\ell\leq k$.  So
+  $\mem_0$ is valid for $Z$ because $\mem$ is valid for $XZ$.  Also,
+  since $\mem$ is valid for $R$, if $S$ contains a counter $c$ then
+  $c$ is not visible $R$ and thus $\mem(c)=0$.  Thus, $\mem$ is
+  also valid for $S$.
+
+  Assume first that $S$ is not nullable.
+  It follows that,
+  since $\mem(c)=0$ for all $c\in\COUNTERS{S}$ because $\mem$ is valid for $R$
+  and, unless $\CanExit{S}=\bot$, there must be at least one
+  counter c such that $\MIN{c}>0$ and $\CanExit{S}$ contains the conjunct
+  $\CanExit{c}$ and so
+  \begin{equation}
+    \label{theorem:CD:eq1}
+  \mem\not\models\CanExit{S}
+  \end{equation}
+It is also true that
+  \begin{equation}
+    \begin{array}{rcl}
+    \label{theorem:CD:eq2}
+    \mem_0\neq\bot \;\textrm{and}\;
+    \mem_0\models \CanExit{Z} &\Iff& 
+    \mem\models\CanExit{X} \;\textrm{and}\;
+    \ExitOp[X](\mem) \models \CanExit{Z}  \\
+    &\Iff&
+    \mem\models\CanExit{XZ}
+   \end{array}
+  \end{equation}
+  because $\VISIBLE{XZ}=\{X\}\cup(\VISIBLE{Z}\setminus\COUNTERS{S})$, so only the counters in
+  $\{X\}\cup\COUNTERS{S}$ could interfere (if they occur in the scope of $Z$) but their value is $0$ in $\mem_0$
+  by validity of $\mem$.
+  Let $$ E=\{\eps\mid\mem\models\CanExit{XZ}\}.$$
+  We get the following (observe that if $\mem_0=\bot$, then $
+  \LANG{\mem_0}{Z}=\emptyset$):
+\begin{eqnarray*}
+  \LANG{\mem}{XZ} &=& \LANG{\mem}{S}\cdot\LANG{\mem_1}{XZ} \cup \LANG{\mem_0}{Z}
+  \\
+  &\stackrel{(2\times\textrm{IH})}{=}& \LPAR \bigcup_{\alpha}\den{\alpha}\cdot\LANG{\mem}{\CD{\alpha}{S}}
+  \cup \{\eps\mid\mem\models\CanExit{S}\}
+  \RPAR\cdot \LANG{\mem_1}{XZ}
+  \cup \\
+  && \bigcup_{\alpha}\den{\alpha}\cdot \LANG{\mem_0}{\CD{\alpha}{Z}}
+  \cup \{\eps\mid\mem_0\neq\bot\; \textrm{and}\;\mem_0\models\CanExit{Z}\}\\
+  &\stackrel{(\textrm{(\ref{theorem:CD:eq1}),(\ref{theorem:CD:eq2})})}{=}&
+  \LPAR \bigcup_{\alpha}\den{\alpha}\cdot\LANG{\mem}{\CD{\alpha}{S}}
+  \RPAR\cdot \LANG{\mem_1}{XZ}
+  \cup \bigcup_{\alpha}\den{\alpha}\cdot \LANG{\mem_0}{\CD{\alpha}{Z}} \cup E 
+  \\
+  &=& \bigcup_{\alpha}\den{\alpha}\cdot\LPAR\LANG{\mem}{\CD{\alpha}{S}}\cdot\LANG{\mem_1}{XZ}\cup
+  \LANG{\mem_0}{\CD{\alpha}{Z}} \RPAR \cup E \\
+  &=& \bigcup_{\alpha}\den{\alpha}\cdot\LPAR
+  \underbrace{\LANG{\mem}{\CD{\alpha}{S}}\cdot\LANG{\mem}{\pair{\IncrOp[X]}{XZ}}}_{
+      \begin{array}{@{}c@{}}
+         \textrm{$(\star)$} =\\
+        \LANG{\mem}{\CD{\alpha}{S}\otimes\spair{\IncrOp[X]}{XZ}}
+    \end{array}
+  }
+  \cup \LANG{\mem}{\spair{\ExitOp[X]}{\emp}\otimes\CD{\alpha}{Z}} \RPAR \cup E \\
+    &=&
+  \bigcup_{\alpha}\den{\alpha}\cdot\LANG{\mem}{\CD{\alpha}{S}\otimes\spair{\IncrOp[X]}{XZ} \cup
+    \spair{\ExitOp[X]}{\emp}\otimes\CD{\alpha}{Z}} \cup E \\
+  &=& \bigcup_{\alpha}\den{\alpha}\cdot \LANG{\mem}{\CD{\alpha}{XZ}} \cup E
+\end{eqnarray*}
+We show next that $(\star)$ holds. Let $\pair{f}{W}\in\CD{\alpha}{S}$.
+It suffices to show that
+\[
+\LANG{\mem}{\pair{f}{W}}\cdot\LANG{\mem}{\pair{\IncrOp[X]}{XZ}} = \LANG{\IncrOp[X](f(\mem))}{WXZ}
+\]
+holds which is the same as:
+\begin{equation}
+  \label{theorem:CD:eq}
+\LANG{\IncrOp[X](f(\mem))}{WXZ} =
+\LANG{f(\mem)}{W}\cdot\LANG{\IncrOp[X](\mem)}{XZ}
+\end{equation}
+Since $\mem$ is valid for $WXZ$, $\IncrOp[X](f(\mem))$ is also valid
+for $WXZ$ because the potential updates to $\mem$ only affect visible counters.  It follows that
+\begin{eqnarray*}
+\LANG{\IncrOp[X](f(\mem))}{WXZ} &\stackrel{\textrm{(Lemma~\ref{lemma:RESET})}}{=}&
+\LANG{\IncrOp[X](f(\mem))}{W}\cdot
+\LANG{\RESET{\VISIBLE{W}}(\IncrOp[X](f(\mem)))}{XZ} \\
+&\stackrel{(X\notin\COUNTERS{W})}{=}&
+\LANG{f(\mem)}{W}\cdot
+\LANG{\RESET{\VISIBLE{W}}(\IncrOp[X](f(\mem)))}{XZ} 
+\end{eqnarray*}
+We have that $\VISIBLE{W}\subseteq\COUNTERS{W}\subseteq\COUNTERS{S}$ by construction of
+derivatives and $f$ only affects values of counters in $\VISIBLE{W}$. Since
+$\mem$ is valid for $R$ and $\COUNTERS{S}\subseteq\HIDDEN{R}$ it
+follows that $\mem(c)=0$ for all $c\in \VISIBLE{W}$, and
+$X\in\VISIBLE{R}\setminus\COUNTERS{S}$.  Therefore
+$\RESET{\VISIBLE{W}}(\IncrOp[X](f(\mem))) =
+\IncrOp[X](\mem)$, i.e.,
+the reset cancels the effect of $f$, and so
+\[
+\LANG{\RESET{\VISIBLE{W}}(\IncrOp[X](f(\mem)))}{XZ} 
+=
+\LANG{\IncrOp[X](\mem)}{XZ}
+\]
+This completes the proof of (\ref{theorem:CD:eq}) and $(\star)$, and thus
+the induction case under the condition that $S$ is not nullable.
+Under the condition that $S$ is nullable, it follows that $\ell=0$
+because $R$ is normalized.  But we can pretend that $S$ \emph{is not
+  nullable} because $\ell=0$ makes $X$ nullable and the proof remains
+unchanged.
+%(Observe that we also know that $\LANG{\mem_1}{X} \subseteq
+%\LANG{\mem}{X}$ when $\ell=0$ by using Lemma~\ref{lemma:COUNTING}
+%which is a different way \tv{I see that the inclusion holds, but I don't see how
+%this helps here: either make the alternative proof idea
+%clearer or remove it.} of showing that nullablity of $S$ does not
+%matter in $X$ when $\ell=0$.)
+
+\paragraph{Induction case $R= S{*}Z$}
+Observe that $\mem\models\CanExit{R}$ iff $\mem\models\CanExit{Z}$
+because $S{*}$ is nullable and $\mem(c)=0$ for all $c\in\COUNTERS{S}$.
+Assume without loss of generality that $S$ is not nullable.
+In this case $\mem\not\models\CanExit{S}$. Let $E= \{\eps\mid \mem\models\CanExit{R}\}$.
+\begin{eqnarray*}
+  \LANG{\mem}{S{*}Z} &=& \LANG{\mem}{S}^*\cdot \LANG{\mem}{Z}\\
+  &=& \LANG{\mem}{S}\cdot\LANG{\mem}{S{*}Z} \cup \LANG{\mem}{Z}\\
+  &\stackrel{\textrm{($2\times$IH)}}{=}&
+  \LPAR\bigcup_{\alpha}\den{\alpha}\cdot
+  \LANG{\mem}{\CD{\alpha}{S}}\cup\{\eps\mid \mem\models\CanExit{S}\}
+  \RPAR \cdot \LANG{\mem}{S{*}Z} \cup\\
+  &&
+  \bigcup_{\alpha}\den{\alpha}\cdot
+  \LANG{\mem}{\CD{\alpha}{Z}}\cup\{\eps\mid \mem\models\CanExit{Z}\}
+    \\
+  &=&
+  \bigcup_{\alpha}\den{\alpha}\cdot
+  \LANG{\mem}{\CD{\alpha}{S}}
+  \cdot \LANG{\mem}{S{*}Z} \cup
+  \bigcup_{\alpha}\den{\alpha}\cdot
+  \LANG{\mem}{\CD{\alpha}{Z}}\cup E \\
+  &=&
+  \bigcup_{\alpha}\den{\alpha}\cdot
+  \LPAR
+  \LANG{\mem}{\CD{\alpha}{S}}
+   \cdot \LANG{\mem}{S{*}Z} \cup
+  \LANG{\mem}{\CD{\alpha}{Z}}\RPAR\cup E
+  \\
+  &=&
+    \bigcup_{\alpha}\den{\alpha}\cdot
+    \LPAR
+    \bigcup_{\pair{f}{W}\in\CD{\alpha}{S}}
+  \LANG{f(\mem)}{W}
+   \cdot \LANG{\mem}{S{*}Z} \cup
+   \LANG{\mem}{\CD{\alpha}{Z}}\RPAR\cup E
+     \\
+  &\stackrel{(\star\star)}{=}&
+    \bigcup_{\alpha}\den{\alpha}\cdot
+    \LPAR
+    \bigcup_{\pair{f}{W}\in\CD{\alpha}{S}}
+  \LANG{f(\mem)}{WS{*}Z} \cup
+  \LANG{\mem}{\CD{\alpha}{Z}}\RPAR\cup E \\
+  &=&
+    \bigcup_{\alpha}\den{\alpha}\cdot
+    \LPAR
+    \LANG{\mem}{\CD{\alpha}{S}\otimes\spair{\id}{S{*}Z}}\cup
+    \LANG{\mem}{\CD{\alpha}{Z}}\RPAR\cup E \\
+  &=&
+    \bigcup_{\alpha}\den{\alpha}\cdot
+    \LANG{\mem}{\CD{\alpha}{S}\otimes\spair{\id}{S{*}Z}\cup\CD{\alpha}{Z}}\cup E \\
+  &=&
+    \bigcup_{\alpha}\den{\alpha}\cdot
+    \LANG{\mem}{\CD{\alpha}{S{*}Z}}\cup E \\
+\end{eqnarray*}
+Equality $(\star\star)$ holds by using Lemma~\ref{lemma:RESET}
+because $\RESET{\VISIBLE{W}}(f(\mem))=\mem$
+since $\mem(c)=0$ for $c\in\COUNTERS{S}$ and
+$\VISIBLE{W}\subseteq \COUNTERS{W}\subseteq\COUNTERS{S}$ by definition of conditional
+derivatives.
+
+\paragraph{Induction case $R= (Y_1|Y_2)Z$}
+In this case $\mem\models\CanExit{Y_iZ}$ iff
+$Y_i$ is nullable and $\mem\models\CanExit{Z}$ because
+$\mem(c)=0$ for $c\in\COUNTERS{Y_i}$.
+\begin{eqnarray*}
+  \LANG{\mem}{(Y_1|Y_2)Z} &=& \LANG{\mem}{Y_1Z}\cup \LANG{\mem}{Y_2Z}\\
+  &\stackrel{\textrm{($2\times$IH)}}{=}& \bigcup_{i=1,2}\LPAR\bigcup_{\alpha}\den{\alpha}\cdot
+  \LANG{\mem}{\CD{\alpha}{Y_iZ}} \cup\{\eps\mid\mem\models\CanExit{Y_iZ}\}\RPAR\\
+  &=&
+  \bigcup_{\alpha}\den{\alpha}\cdot
+  \LANG{\mem}{\CD{\alpha}{Y_1Z}\cup\CD{\alpha}{Y_2Z}} \cup\{\eps\mid\mem\models\CanExit{Y_1Z}\vee\CanExit{Y_2Z}\}\RPAR\\
+  &=&
+  \bigcup_{\alpha}\den{\alpha}\cdot
+  \LANG{\mem}{\CD{\alpha}{(Y_1|Y_2)Z}} \cup\{\eps\mid\mem\models\CanExit{R}\}\RPAR
+\end{eqnarray*}
+The last equality uses that
+$\mem\models\CanExit{Y_1Z}\vee\CanExit{Y_2Z}$ iff
+$\mem\models\CanExit{(Y_1|Y_2)Z}$.
+The statement follows by the induction principle.
+\end{proof}
+ 
+%==============================================================================
+\subsection{Proof of Theorem~\ref{thm:deriv}\label{appThmDeriv}}
+%==============================================================================
+
+In the proof of Theorem~\ref{thm:deriv} we refer to the following characterization of the
+language of a~state~$q$: 
+%
+% The following fundamental equation holds by definition and is very useful
+% in inductive proofs. It is used below. For all $q\in Q$:
+%
+\begin{equation}
+\label{eq:Lq}
+\Lq[\aut]{q} = \LPAR\bigcup_{({q},{\alpha},{p})\in\Delta_\aut}\den{\alpha}\cdot\Lq[\aut]{p}\RPAR \cup \{\eps\mid q\in F\}
+% we can get rid of one pair of parenthesis:
+% \Lq[\aut]{q} = \{\eps\mid q\in F\} \cup \bigcup_{({q},{\alpha},{p})\in\Delta_\aut}\den{\alpha}\cdot\Lq[\aut]{p}
+\end{equation}
+%\lh{do we need to number this equation?}
+%
+(i.e., $\eps \in \Lq[\aut]{q}$ iff $q \in F$).
+We write $\Lq{q}$ for $\Lq[\aut]{q}$ when
+$\aut$ is clear from the context.
+
+\begin{proof}[Proof of Theorem~\ref{thm:deriv}]
+  Let $R$ be fixed.
+%  For any state $p \in Q_A$ let
+%  $\mem_p$ and $S_p$ denote its components, i.e.,
+%  $p=\pair{\mem_p}{S_p}$.
+  We prove the following statement by induction over the length of $w$:
+  \[
+  \forall \pair{\mem}{S}\in Q_A: w\in \Lq[A]{\pair{\mem}{S}} \Iff w \in \LANG{\mem}{S}
+  \]
+
+  \paragraph{Base case $w=\eps$}
+  Fix $q=\pair{\mem}{S}\in Q_A$. Then $\eps\in\Lq[A]{q}$ iff (by~(\ref{eq:Lq}))
+  $q\in F_A$ iff (by definition of $F_{\CA(R)}$)
+  $\mem\models \CanExit{S}$ iff (by Theorem~\ref{theorem:CD}) $\eps\in \LANG{\mem}{S}$.
+  
+  \paragraph{Induction case $w=av$}
+  Fix $\pair{\mem}{S}\in Q_A$. Choose the unique $\alpha\in\Sigma$ such that $a\in\den{\alpha}$.
+  \begin{eqnarray*}
+    av \in  \LANG{\mem}{S} &\stackrel{\textrm{(Theorem~\ref{theorem:CD})}}{\Iff}&
+    av \in \den{\alpha}\cdot\LANG{\mem}{\CD{\alpha}{S}} \\
+    &\Iff& \exists \pair{f}{T}\in\CD{\alpha}{S}: v\in \LANG{f(\mem)}{T} \\
+    &\stackrel{\textrm{(IH)}}{\Iff}& \exists \pair{f}{T}\in\CD{\alpha}{S}: v\in \Lq[A]{\pair{f(\mem)}{T}} \\
+    &\Iff& \exists \move{\pair{\mem}{S}}{\alpha}{\pair{f(\mem)}{T}}\in\Delta_A:  v\in \Lq[A]{\pair{f(\mem)}{T}}\\
+    &\stackrel{\textrm{(\ref{eq:Lq})}}{\Iff}& av \in\Lq[A]{\pair{\mem}{S}} 
+  \end{eqnarray*}
+
+  \iffalse
+
+    av\in \Lq[A]{q} &\stackrel{\textrm{(\ref{eq:Lq})}}{\Iff}&
+    v\in \bigcup_{\move{q}{\alpha}{p}}\Lq[A]{p} \\
+    &\stackrel{\textrm{(IH)}}{\Iff}&
+    v \in \bigcup_{\move{q}{\alpha}{p}}\LANG{\mem_p}{S_p} \\
+    &\Iff&
+    v \in \bigcup_{}\LANG{\mem_p}{S_p} \\
+
+  \fi
+The statement follows by the induction principle.
+\end{proof}
+
+
+%==============================================================================
+\subsection{Proof of Theorem~\ref{theorem:SIZE}\label{app:theorem:SIZE}}
+%==============================================================================
+
+Let $\CDp{R}$ denote the set of all regexes arising through partial
+  derivatives applied recursively starting from a normalized regex $R$.
+  Formally, let
+  \[
+  \CD{}{R}\eqdef \{W\mid \exists\alpha,f:\alpha\in\Minterms{R},\pair{f}{W}\in\CD{\alpha}{R}\},
+  \]
+  then
+  $\CDp{R}$ is the least fixed point of the following equations,
+  where $L$ is a set of normalized regexes,
+  \[
+\CDp{R} = \CD{}{R} \cup \CDp{\CD{}{R}}, \quad \CDp{L} = \bigcup_{R\in L}\CDp{R}.
+\]
+We first prove the following lemma where given a set of normalized regexes $L$ and
+a normalized regex $Z$ we let $LZ$ denote the set $\{WZ\mid W\in L\}$ of normalized regexes.
+Observe that $\CDp{R}$ is the set of regexes reached after one or more derivations, 
+which may but need not
+include $R$ itself, e.g., $\CDp{\texttt{b(ab)\{9\}}} = \{\texttt{(ab)\{9\}}, \texttt{b(ab)\{9\}}\}$ includes the start regex while
+$\CDp{\texttt{ab}} = \{\texttt{b},\emp\}$ does not.
+We write $S{\diamond}$ for a counting loop $S\{\ell,k\}$ or loop $S{*}$.
+\begin{lemma}
+  \label{lemma:CDp}
+  Let $X$ and $Z$ be any normalized regexes.
+  Then $\CDp{XZ}=\CDp{X}Z\cup\CDp{Z}$ and if $X$ is a (counting) loop
+  $S{\diamond}$ then $\CDp{X}=\CDp{S}X$.
+\end{lemma}
+\begin{proof}
+  \iffalse
+  We first prove that if $X=S{\diamond}$ then $\CDp{X}=\CDp{S}X$.
+  In order to do so, we let $\CDp[1]{X}\eqdef \CD{}{X}$ and
+  $\CDp[n+1]{X} \eqdef \CD{}{X} \cup \CDp[n]{\CD{}{X}}$ where, for a set $L$ of normalized regexes,
+  $\CDp[n]{L} \eqdef \bigcup_{X\in L}\CDp[n]{X}$. We prove by induction over $n$ that for all $S$
+  \[
+  \CDp[n]{S{\diamond}} = \CDp[n]{S}S{\diamond}
+  \]
+  The base case $n=1$ follows directly from the definition of $\CD{\alpha}{S{\diamond}}$ (for any $\alpha$).
+  For the induction case, $n+1$, we get, by using the definition of $\CD{\alpha}{S{\diamond}}$ (for any $\alpha$),
+  \[
+  \CDp[n+1]{S{\diamond}} = \CD{}{S{\diamond}} \cup \CDp[n]{\CD{}{S{\diamond}}} =
+  \CD{}{S}S{\diamond} \cup \CDp[n]{\CD{}{S}S{\diamond}} \stackrel{\textrm{IH}}{=}
+   \CD{}{S}S{\diamond} \cup \CDp[n]{S}{\CD{}{S{\diamond}}}
+  \]
+  It follows that
+  \[
+  \CDp{X} = \bigcup_{n\geq 1}\CDp[n]{X} = \bigcup_{n\geq 1}\CDp[n]{S}X = (\bigcup_{n\geq 1}\CDp[n]{S})X = \CDp{S}X
+  \]
+  \fi
+  We prove 
+  by induction over $\SIZEOF{X}$ that $\CDp{XZ}=\CDp{X}Z\cup\CDp{Z}$.
+  The base case $X=\emp$ follows immediately because
+  $\CD{}{\emp}=\emptyset$.
+  
+  Induction case $X=\psi Y$:
+  \begin{eqnarray*}
+    \CDp{XZ} &=& \{Y Z\} \cup \CDp{YZ} \\
+    &\stackrel{IH}{=}&
+    \{Y Z\} \cup \CDp{Y}Z \cup\CDp{Z} \\
+    &=& (\{Y\} \cup \CDp{Y})Z \cup \CDp{Z} \\
+    &=& \CDp{X}Z\cup\CDp{Z}
+  \end{eqnarray*}
+
+  Induction case $X=(X_1|X_2)Y$:
+  \begin{eqnarray*}
+    \CDp{XZ} &=& \CDp{X_1YZ}\cup\CDp{X_2YZ}\\
+    &\stackrel{2\times IH}{=}&
+    \CDp{X_1Y}Z \cup \CDp{X_2Y}Z \cup\CDp{Z} \\
+    &\stackrel{2\times IH}{=}&
+    (\CDp{X_1}Y\cup \CDp{Y})Z \cup (\CDp{X_2}Y\cup \CDp{Y})Z \cup\CDp{Z} \\
+    &=&
+    (\CDp{X_1}Y \cup \CDp{X_2}Y \cup \CDp{Y})Z \cup\CDp{Z} \\
+    &=&
+    (\CDp{X_1|X_2}Y \cup \CDp{Y})Z \cup\CDp{Z} \\
+     &\stackrel{(\star)}{=}&
+    \CDp{X}Z \cup\CDp{Z} 
+  \end{eqnarray*}
+  In $(\star)$, if $Y=\emp$, the equality holds by definition of
+  derivatives of a choice node.  
+  If $Y\neq \emp$, then $X_1|X_2$ is
+  smaller than $X$, and one can apply the IH on $(X_1|X_2)Y$ with $X_1|X_2$ as $X$ and 
+  $Y$ as an instance of the universal variable $Z$ in the lemma.
+
+  Induction case of $X=S{\diamond}Y$
+ where $S{\diamond}$ is either a counting loop or a ${*}$-loop.
+    The proof step uses the property that, for any normalized $W$,
+    \begin{equation}
+    \label{lemma:CDp:eq}
+    \CDp{S{\diamond}W} = \CDp{S}S{\diamond}W \cup \CDp{W}
+    \end{equation}
+    holds.
+    %Observe that the special case of $W=\emp$ implies that $\CDp{S{\diamond}} = \CDp{S}S{\diamond}$
+    % because $ \CDp{\emp}=\emptyset$.
+        Equation (\ref{lemma:CDp:eq}) is proved as follows:
+    \begin{eqnarray*}
+      \CDp{S{\diamond}W} &=& \CDp{SS{\diamond}W} \cup \CDp{W}\\
+      &\stackrel{\textrm{(IH)}}{=}& \CDp{S}S{\diamond}W\cup\CDp{S{\diamond}W} \cup \CDp{W}\\
+      &\stackrel{\textrm{(lfp)}}{=}& \CDp{S}S{\diamond}W \cup \CDp{W}
+    \end{eqnarray*}
+    where (lfp) holds because
+    $\CDp{S{\diamond}W} \subseteq \CDp{S}S{\diamond}W \cup \CDp{W}$ that can be shown separately.
+    It follows that
+    \begin{eqnarray*}
+      \CDp{XZ} &=& \CDp{S{\diamond}(YZ)}\\
+      &\stackrel{(\ref{lemma:CDp:eq})}{=}&
+      \CDp{S}S{\diamond}YZ \cup \CDp{YZ} \\
+       &\stackrel{IH}{=}&
+      \CDp{S}S{\diamond}YZ \cup \CDp{Y}Z \cup \CDp{Z} \\
+       &=&
+      (\CDp{S}S{\diamond}Y \cup \CDp{Y})Z \cup \CDp{Z} \\
+      &\stackrel{(\ref{lemma:CDp:eq})}{=}&
+      \CDp{S{\diamond}Y}Z \cup \CDp{Z} \\
+      &=&
+      \CDp{X}Z\cup\CDp{Z}
+    \end{eqnarray*}
+    The statement follows by the induction principle.
+    Observe that (\ref{lemma:CDp:eq}) implies the second part of the lemma by letting $W=\emp$.
+\end{proof}
+
+We now present the proof of the theorem. Recall that $|S|$ denotes the
+cardinality of a set $S$, and $\SIZEOF{R}$ is the size of a regex $R$ that
+denotes the number of abstract syntax tree nodes of $R$ (up to the case of $R =
+\eps$ where the size is zero), and $\LEAFCNT{R}$ denotes the number of
+predicates nodes in $R$.
+
+\begin{proof}[Proof of Theorem~\ref{theorem:SIZE}]  
+  We first prove, by induction over $\SIZEOF{R}$, that (\ref{eq:theorem:SIZE}) holds.
+  \begin {equation}
+    \label{eq:theorem:SIZE}
+  |\CDp{R}|\leq \LEAFCNT{R}
+  \end{equation}
+  
+ \paragraph{Base case $R=\emp$} Then $\CDp{R} = \emptyset$ and
+  $\LEAFCNT{R}=0$, and so (\ref{eq:theorem:SIZE}) holds trivially.
+
+ \paragraph{Induction case $R=\psi Z$} This gives us $\CDp{R}=\{Z\}\cup\CDp{Z}$.
+  Thus
+%\tv{Not sure how the below was obtained. In particular:\\ $\LEAFCNT{\CDp{R}} =
+%\LEAFCNT{\{Z\}\cup\CDp{Z}} \leq \LEAFCNT{Z} + \LEAFCNT{\CDp{Z}}
+%\stackrel{IH}{\leq} \LEAFCNT{Z} + \LEAFCNT{Z}$. I do not see how to relate
+%this to $\LEAFCNT{R} = \LEAFCNT{\psi Z} = 1 + \LEAFCNT{Z}$. The same seems to
+%be the case for $\SIZEOF{.}$.}
+  \[
+  |\CDp{R}| \leq |\CDp{Z}| + 1 \stackrel{IH}{\leq} \LEAFCNT{Z} + 1 =
+  \LEAFCNT{R}.
+  \]
+
+%\tv{In the rest, change the appropriate occurrences of $\SIZEOF{.}$ to
+%$\LEAFCNT{.}$.}
+
+  \paragraph{Induction case $R=(X|Y)Z$} This gives us $\CDp{R}=\CDp{XZ}\cup\CDp{YZ}$.
+  Then, by Lemma~\ref{lemma:CDp},
+  \[
+  \CDp{XZ}\cup\CDp{YZ} = \CDp{X}Z\cup\CDp{Y}Z\cup\CDp{Z}
+  \]
+  which implies that (observe that, trivially, $|LZ| = |L|$ for any set $L$ and regex $Z$)
+  \[
+  |\CDp{R}| \leq |\CDp{X}|+|\CDp{Y}|+|\CDp{Z}|
+  \stackrel{\textrm{IH}}{\leq}
+  \LEAFCNT{X}+\LEAFCNT{Y}+\LEAFCNT{Z} = \LEAFCNT{R}.
+  \]
+  \paragraph{Induction case $R=S{\diamond}Z$} Here $\CDp{R} = \CDp{S}S{\diamond}Z \cup\CDp{Z}$ by
+  using (\ref{lemma:CDp:eq}) in Lemma~\ref{lemma:CDp}. Thus,
+  \[
+  |\CDp{R}| \leq |\CDp{S}| + |\CDp{Z}| \stackrel{\textrm{IH}}{\leq}
+  \LEAFCNT{S}+\LEAFCNT{Z} =  \LEAFCNT{R}.
+  \]
+  Equation (\ref{eq:theorem:SIZE}) follows by the induction principle.
+  Theorem~\ref{theorem:SIZE} follows from (\ref{eq:theorem:SIZE}) because $Q_{\CA(R)} = \CDp{R} \cup\{R\}$ and thus
+  $|Q_{\CA(R)}| \leq |\CDp{R}| + 1 \leq \LEAFCNT{R}+1$.
+\end{proof}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
